@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/table"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import toast from 'react-hot-toast'
 import { FromCreate } from "../FormCreate/FormCreate"
 import { Button } from "../ui/button"
-import { useToast } from "../ui/use-toast"
 
 export interface Task {
   id: number
@@ -36,8 +36,8 @@ export interface ResponseApi {
 }
 
 export function ListTable() {
-	const { toast } = useToast()
 	const [tasks, setTasks] = useState<Task[]>([])
+	const [error, setError] = useState('')
 	const [loadingTasks, setLoadingTasks] = useState<boolean>(true)
 
 	const [openDialogDelete, setOpenDialogDelete] = useState<boolean>(false)
@@ -48,6 +48,29 @@ export function ListTable() {
 	const [taskSelectedToEdit, setTaskSelectedToEdit] = useState<Task | null>(null)
 	const [loadingDeleteTask, setLoadingDeleteTask] = useState<boolean>(false)
 
+	const notify = () => toast('Here is your toast.', {
+		duration: 4000,
+		position: 'top-center',
+	
+		// Styling
+		style: {},
+		className: '',
+	
+		// Custom Icon
+		icon: '👏',
+	
+		// Change colors of success/error/loading icon
+		iconTheme: {
+			primary: '#000',
+			secondary: '#fff',
+		},
+	
+		// Aria
+		ariaProps: {
+			role: 'status',
+			'aria-live': 'polite',
+		},
+	});
 
 	useEffect(() => {
 		fetch("http://localhost:5000/tasks/")
@@ -55,7 +78,11 @@ export function ListTable() {
       .then((data: ResponseApi) => {
 				console.log({ takss: data.tasks })
         setTasks(data.tasks)
-      }).finally(() => {
+      })
+			.catch(() => {
+				setError('A ocurrido un error, intente nuevamente')
+			})
+			.finally(() => {
 				setLoadingTasks(false)
 			}) 
 	}, [])
@@ -72,17 +99,14 @@ export function ListTable() {
 
 		console.log({ result })
 		if(result.status === 200) {
-			toast({
-				description: "Tarea eliminada correctamente.",
-			})
+			alert("Tarea eliminada correctamente.")
+			notify()
 			setTasks(tasks.filter(task => task.id !== idTask))
 			setOpenDialogDelete(false)
 			setLoadingDeleteTask(false)
 			setTaskSelectedToDelete(null)
 		} else {
-			toast({
-				description: "A ocurrido un error, intente nuevamente.",
-			})
+			toast("A ocurrido un error, intente nuevamente.")
 			setOpenDialogDelete(true)
 			setLoadingDeleteTask(false)
 		}
@@ -108,6 +132,10 @@ export function ListTable() {
 				</TableHeader>
 				<TableBody>
 					{
+					error 
+					? <div className="w-full p-8 text-center ">
+						<p className="text-red-500 text-sm font-bold">{error}</p>
+					</div>  :	
 					loadingTasks ? 'loading'
 					: tasks?.map((task) => (
 						<TableRow key={task?.id}>
